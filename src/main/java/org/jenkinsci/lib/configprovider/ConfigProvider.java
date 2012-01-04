@@ -25,6 +25,7 @@ package org.jenkinsci.lib.configprovider;
 
 import hudson.ExtensionList;
 import hudson.ExtensionPoint;
+import hudson.model.Descriptor;
 import jenkins.model.Jenkins;
 import org.jenkinsci.lib.configprovider.model.Config;
 import org.jenkinsci.lib.configprovider.model.ConfigDescription;
@@ -33,13 +34,17 @@ import org.jenkinsci.lib.configprovider.model.ContentType;
 import java.util.Collection;
 
 /**
- * A ConfigProvider is able to manage different configuration files (see:
- * {@link Config})
+ * A ConfigProvider represents a configuration file (such as Maven's settings.xml)
+ * where the user can choose its actual content among several {@linkplain Config concrete contents} that are pre-configured.
  * 
+ * <p>
+ * {@link ConfigProvider} is an extension point, and should be implemented and instantiated by
+ * each kind of configuration. This abstraction doesn't define where the configuration is placed,
+ * or how/when it's used &mdash; those semantics should be introduced by a specific instance of {@link ConfigProvider}.
+ *
  * @author domi
- * 
  */
-public abstract class ConfigProvider implements ExtensionPoint {
+public abstract class ConfigProvider extends Descriptor<Config> implements ExtensionPoint {
 
 	/**
 	 * All registered {@link ConfigProvider}s.
@@ -60,8 +65,13 @@ public abstract class ConfigProvider implements ExtensionPoint {
 	 * of
 	 * 
 	 * @return the description
+     * @deprecated as of 1.2
+     *      Use {@link #getDisplayName()} for {@link ConfigDescription#name},
+     *      and {@code newInstanceDetail.jelly} view for {@link ConfigProvider} replaces the {@link ConfigDescription#description} field.
 	 */
-	public abstract ConfigDescription getConfigDescription();
+	public ConfigDescription getConfigDescription() {
+        return new ConfigDescription(getDisplayName(),"");
+    }
 
 	/**
 	 * The content type of the configs this provider manages. e.g. can be used

@@ -38,60 +38,35 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
 
-public abstract class AbstractConfigProvider extends ConfigProvider implements Saveable {
+/**
+ * Backward compatibility layer for old subtypes of {@link ConfigProvider}
+ * 
+ * @deprecated as of 1.2.
+ *      Extend {@link AbstractConfigProviderImpl} directly.
+ */
+public abstract class AbstractConfigProvider extends AbstractConfigProviderImpl {
 
 	protected final String ID_PREFIX = this.getClass().getSimpleName() + ".";
-
-	protected Map<String, Config> configs = new HashMap<String, Config>();
 
 	public AbstractConfigProvider() {
 		load();
 	}
 
-	@Override
-	public Collection<Config> getAllConfigs() {
-		return Collections.unmodifiableCollection(configs.values());
-	}
+    @Override
+    public String getProviderId() {
+        return ID_PREFIX;
+    }
 
-	@Override
-	public Config getConfigById(String configId) {
-		return configs.get(configId);
-	}
+    // backward compatibility
+    @Override
+    public String getDisplayName() {
+        return getConfigDescription().getName();
+    }
 
-	@Override
-	public abstract ConfigDescription getConfigDescription();
-
-	@Override
-	public String getProviderId() {
-		return ID_PREFIX;
-	}
-
-	@Override
-	public boolean isResponsibleFor(String configId) {
-		return configId != null && configId.startsWith(ID_PREFIX);
-	}
-
-	@Override
-	public Config newConfig() {
-		String id = this.getProviderId() + System.currentTimeMillis();
-		return new Config(id, null, null, null);
-	}
-
-	@Override
-	public void remove(String configId) {
-		configs.remove(configId);
-		this.save();
-	}
-
-	@Override
-	public void save(Config config) {
-		configs.put(config.id, config);
-		this.save();
-	}
-
-	/**
-	 * @see hudson.model.Saveable#save()
+    /**
+     * Overridden for backward compatibility to let subtype customize the file name.
 	 */
+    @Override
 	public void save() {
 		if (BulkChange.contains(this))
 			return;
@@ -103,7 +78,10 @@ public abstract class AbstractConfigProvider extends ConfigProvider implements S
 		}
 	}
 
-	protected void load() {
+    /**
+     * Overridden for backward compatibility to let subtype customize the file name.
+	 */
+	public void load() {
 		XmlFile xml = getConfigXml();
 		if (xml.exists()) {
 			try {
@@ -118,6 +96,7 @@ public abstract class AbstractConfigProvider extends ConfigProvider implements S
 		return new XmlFile(Jenkins.XSTREAM, new File(Jenkins.getInstance().getRootDir(), this.getXmlFileName()));
 	}
 
-	protected abstract String getXmlFileName();
-
+	protected String getXmlFileName() {
+        return getClass().getName()+".xml";
+    }
 }
